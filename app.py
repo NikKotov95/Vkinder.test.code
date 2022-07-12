@@ -5,12 +5,13 @@ from models import engine, Session, write_mgs, register_user, add_user, add_user
     check_db_user, check_db_black, check_db_favorites, chekc_db_master, delete_db_blacklist, delete_db_fvorites
 from vk_config import group_token
 
-#  Для работы с вк айпи
+#  Для работы с вк апи
 vk = vk_api.VkApi(token=group_token)
 longpoll = VkLongPoll(vk)
 # Для работы с БД
 session = Session()
 connection = engine.connect()
+
 
 def loop_bot():
     for this_event in longpoll.listen():
@@ -18,6 +19,7 @@ def loop_bot():
             if this_event.to_me:
                 massage_text = this_event.text
                 return massage_text, this_event.user_id
+
 
 def menu_bot(id_num):
     write_msg(id_num,
@@ -29,17 +31,20 @@ def menu_bot(id_num):
               f"\nЧтобы перейти в избранное нажмите - 2\n"
               f"\nДля перехода в черный список - 0\n")
 
+
 def show_info():
     write_msg(user_id, f'Это была последняя анкета.'
-                       f'Перейти в избранное - 2'   
+                       f'Перейти в избранное - 2'
                        f'Перейти в черный список - 0'
                        f'Поиск - Женщина(Мужчина) 18-35 Бедгород'
                        f'Меню бота - Vkinder')
+
 
 def reg_new_user(id_num):
     write_msg(id_num, 'Вы прошли регистрацию')
     write_msg(id_num, f"Vkinder - для активации бота\n")
     register_user(id_num)
+
 
 def go_to_favorites(ids):
     all_users = check_db_favorites(ids)
@@ -51,17 +56,18 @@ def go_to_favorites(ids):
         if msg_texts == '0':
             if nums >= len(all_users) - 1:
                 write_mgs(user_ids, f'Это была последняя анкета.\n'
-                          f'Vkinder - вернуться в меню\n')
+                                    f'Vkinder - вернуться в меню\n')
         # Удаляем запись из бд - избранное
         elif msg_texts == '1':
             delete_db_fvorites(users.vk_id)
             write_mgs(user_ids, f'Анкета успешно удалена.')
             if nums >= len(all_users) - 1:
                 write_mgs(user_ids, f'Это была последняя анкета.\n'
-                          f'Vkinder - вернуться в меню\n')
+                                    f'Vkinder - вернуться в меню\n')
         elif msg_texts.lower() == 'q':
             write_msg(ids, 'Vkinder - для активации бота.')
             break
+
 
 def go_to_blacklist(ids):
     all_users = check_db_black(ids)
@@ -71,7 +77,7 @@ def go_to_blacklist(ids):
         write_mgs(ids, '1 - Удалить из черного списка, 0 - Далее \nq - Выход')
         mgs_texts, user_ids = loop_bot()
         if msg_texts == '0':
-            if nums >= len(all_users) - 1:
+            if num >= len(all_users) - 1:
                 write_mgs(user_ids, f'Это была последняя анкета.\n'
                                     f'Vkinder - вернуться в меню\n')
         # Удаляем запись из БД - черный список
@@ -80,10 +86,11 @@ def go_to_blacklist(ids):
             write_mgs(user_ids, f'Анкета успешно удалена.')
             if nums >= len(all_users) - 1:
                 write_mgs(user_ids, f'Это была последняя анкета.\n'
-                          f'Vkinder - вернуться в меню\n')
+                                    f'Vkinder - вернуться в меню\n')
         elif msg_texts.lower() == 'q':
             write_msg(ids, 'Vkinder - для активации бота.')
             break
+
 
 if __name__ == '__main__':
     while True:
@@ -102,9 +109,10 @@ if __name__ == '__main__':
             if int(age_at) < 18:
                 write_msg(user_id, 'Минимальные возраст для поиска - 18 лет.')
                 age_at = 18
-                if init(age_to) < 100:
-                    write_msg(user_id, 'Максимальный возраст для поиска - 99 лет.')
-                    age_to = 99
+            age_to = msg_text[11:14]
+            if int(age_to) < 100:
+                write_msg(user_id, 'Максимальный возраст для поиска - 99 лет.')
+                age_to = 99
                 city = msg_text[14:len(msg_text).lower()]
                 # Ищем анкеты
                 result = search_users(sex, int(age_at), int(age_to), city)
@@ -121,7 +129,7 @@ if __name__ == '__main__':
                     try:
                         write_msg(user_id, f'фото:',
                                   attachment=','.join
-                                  ([sorted_user_photo[-1][1], sorted_user_photo[-2] [1], sorted_user_photo[-3][1]]))
+                                  ([sorted_user_photo[-1][1], sorted_user_photo[-2][1], sorted_user_photo[-3][1]]))
                     except IndexError:
                         for photo in range(len(sorted_user_photo)):
                             write_msg(user_id, f'фото:',
@@ -156,7 +164,7 @@ if __name__ == '__main__':
                         if i >= len(result) - 1:
                             show_info()
                         # Блокируем
-                        add_to_black_list(user_id, result[i][3], result[i],[1],
+                        add_to_black_list(user_id, result[i][3], result[i][1],
                                           result[i][0], city, result[i][2],
                                           sorted_user_photo[0][1],
                                           sorted_user_photo[0][0], current_user_id.id)
