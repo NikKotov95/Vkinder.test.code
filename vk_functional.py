@@ -5,7 +5,8 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_config import group_token, user_token, V
 from vk_api.exceptions import ApiError
 from models import IntegrityError, InvalidRequestError
-from sqlalchemy.exc import IntegrityError, InvalidRequestError
+from sqlalchemy.exc import IntegrityError, \
+InvalidRequestError
 
 # Для работы с ВК
 vk = vk_api.VkApi(token=group_token)
@@ -14,7 +15,9 @@ lonhpoll = VkLongPoll(vk)
 session = Session()
 connection = engine.connect()
 
+
 # ФУНКЦИЯ ПОИСКА
+
 
 # Ищет людей по критериям
 def search_users(sex, age_at, age_to, city):
@@ -40,33 +43,37 @@ def search_users(sex, age_at, age_to, city):
         all_persons.append(person)
         return all_persons
 
-    # Находит фото людей
-    def get_photo(user_owner_id):
-        vk_ = vk_api.VkApi(token=user_token)
+
+# Находит фото людей
+def get_photo(user_owner_id):
+    vk_ = vk_api.VkApi(token=user_token)
+    try:
+        response = vk_.method('photos.get',
+                              {
+                                  'access_token': user_token,
+                                  'v': V,
+                                  'owner_id': user_owner_id,
+                                  'album_id': 'profile',
+                                  'count': 10,
+                                  'extended': 1,
+                                  'photo_sizes': 1,
+                              })
+
+    except ApiError:
+        return 'нет доступа к фото'
+    users_photos = []
+    for i in range(10):
         try:
-            response = vk_.method('photos.get',
-                                  {'access_token': user_token,
-                                    'v': V,
-                                    'owner_id': user_owner_id,
-                                    'album_id': 'profile',
-                                    'count': 10,
-                                    'extended': 1,
-                                    'photo_sizes': 1,})
+            users_photos.append(
+                [response['items'][i]['likes']['count'],
+                 'photo' + str(response['items'][i]['owner_id']) + '_' + str(response['items'][i]['id'])])
+        except IndexError:
+            users_photos.append(['нет фото.'])
+    return users_photos
 
-        except ApiError:
-            return 'нет доступа к фото'
-
-        users_photos = []
-        for i in range(10):
-            try:
-                users_photos.append(
-                    [response['items'][i]['likes']['count'],
-                    'photo' + str(response['items'][i]['owner_id']) + '_' + str(response['items'][i]['id'])])
-            except IndexError:
-                users_photos.append(['нет фото.'])
-        return users_photos
 
 # Функции сортировки. ответа. json
+
 
 # Сортируем по лайкам, удаляем лишние элементы
 def sort_likes(photos):
@@ -75,6 +82,7 @@ def sort_likes(photos):
         if element != ['Нет фото'] and photos != 'Нет доступа к фото':
             result.append(element)
     return sorted(result)
+
 
 # JSON file create with result of programm
 def json_create(lst):
