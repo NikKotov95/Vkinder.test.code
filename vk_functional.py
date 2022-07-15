@@ -6,11 +6,11 @@ from vk_config import group_token, user_token, V
 from vk_api.exceptions import ApiError
 from models import IntegrityError, InvalidRequestError
 from sqlalchemy.exc import IntegrityError, \
-InvalidRequestError
+    InvalidRequestError
 
 # Для работы с ВК
 vk = vk_api.VkApi(token=group_token)
-lonhpoll = VkLongPoll(vk)
+longpoll = VkLongPoll(vk)
 # Для работы с БД
 session = Session()
 connection = engine.connect()
