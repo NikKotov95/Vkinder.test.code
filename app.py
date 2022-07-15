@@ -1,7 +1,7 @@
 import vk_api
 from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_functions import search_users, get_photo, sort_likes, json_create
-from models import engine, Session, write_mgs, register_user, add_user, add_user_photos, add_to_black_list, \
+from models import engine, Session, write_msg, register_user, add_user, add_user_photos, add_to_black_list, \
     check_db_user, check_db_black, check_db_favorites, chekc_db_master, delete_db_blacklist, delete_db_fvorites
 from vk_config import group_token
 
@@ -23,7 +23,7 @@ def loop_bot():
 
 def menu_bot(id_num):
     write_msg(id_num,
-              f"\nВас приветсвует бот Vkinder\n"
+              f"\nВас приветствует бот - Vkinder\n"
               f"\nЕсли вы используете его первый раз - пройдите регистрацию.\n"
               f"\nДля регистрации введите - Зарегестрироваться\n"
               f"\nЕсли вы уже зарегестрированы - начинайте поиск.\n"
@@ -49,20 +49,20 @@ def reg_new_user(id_num):
 def go_to_favorites(ids):
     all_users = check_db_favorites(ids)
     write_msg(ids, f'Избранные анкеты:')
-    for nums, users in enumerate(all_users):
-        write_mgs(ids, f'{users.first_name}, {users.second_name}, {users.link}')
-        write_mgs(ids, '1 - Удалить из избранного, 0 - Далее \nq - Выход')
-        mgs_texts, user_ids = loop_bot()
+    for nums, users in enumerate(alls_users):
+        write_msg(ids, f'{users.first_name}, {users.second_name}, {users.link}')
+        write_msg(ids, '1 - Удалить из избранного, 0 - Далее \nq - Выход')
+        msg_texts, user_ids = loop_bot()
         if msg_texts == '0':
             if nums >= len(all_users) - 1:
-                write_mgs(user_ids, f'Это была последняя анкета.\n'
+                write_msg(user_ids, f'Это была последняя анкета.\n'
                                     f'Vkinder - вернуться в меню\n')
         # Удаляем запись из бд - избранное
         elif msg_texts == '1':
             delete_db_fvorites(users.vk_id)
-            write_mgs(user_ids, f'Анкета успешно удалена.')
+            write_msg(user_ids, f'Анкета успешно удалена.')
             if nums >= len(all_users) - 1:
-                write_mgs(user_ids, f'Это была последняя анкета.\n'
+                write_msg(user_ids, f'Это была последняя анкета.\n'
                                     f'Vkinder - вернуться в меню\n')
         elif msg_texts.lower() == 'q':
             write_msg(ids, 'Vkinder - для активации бота.')
@@ -73,18 +73,18 @@ def go_to_blacklist(ids):
     all_users = check_db_black(ids)
     write_msg(ids, f'Анкеты в черном списке:')
     for num, user in enumerate(all_users):
-        write_mgs(ids, f'{users.first_name}, {users.second_name}, {users.link}')
-        write_mgs(ids, '1 - Удалить из черного списка, 0 - Далее \nq - Выход')
+        write_msg(ids, f'{users.first_name}, {users.second_name}, {users.link}')
+        write_msg(ids, '1 - Удалить из черного списка, 0 - Далее \nq - Выход')
         mgs_texts, user_ids = loop_bot()
         if msg_texts == '0':
             if num >= len(all_users) - 1:
-                write_mgs(user_ids, f'Это была последняя анкета.\n'
+                write_msg(user_ids, f'Это была последняя анкета.\n'
                                     f'Vkinder - вернуться в меню\n')
         # Удаляем запись из БД - черный список
         elif msg_texts == '1':
             delete_db_fvorites(users.vk_id)
             write_mgs(user_ids, f'Анкета успешно удалена.')
-            if nums >= len(all_users) - 1:
+            if num >= len(all_users) - 1:
                 write_mgs(user_ids, f'Это была последняя анкета.\n'
                                     f'Vkinder - вернуться в меню\n')
         elif msg_texts.lower() == 'q':
@@ -95,6 +95,9 @@ def go_to_blacklist(ids):
 if __name__ == '__main__':
     while True:
         msg_text, user_id = loop_bot()
+        if msg_text == "vkinder":
+            menu_bot(user_id)
+            msg_text, user_id = loop_bot()
         # Регистрируем пользователя в БД
         if msg_text.lower() == 'Да' or 'да':
             reg_new_user(user_id)
@@ -150,7 +153,7 @@ if __name__ == '__main__':
                         # Пробуем добавить анкету в БД
                         try:
                             add_user(user_id, result[i][3], result[i][1],
-                                     result[i][0], city, result[i][2], current_user_id)
+                                     result[i][0], city, result[i][2], current_user_id.id)
                             # Пробуем добавить фото анкеты в БД
                             add_user_photos(user_id, sorted_user_photo[0][1],
                                             sorted_user_photo[0][0], current_user_id.id)
