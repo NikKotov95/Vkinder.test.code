@@ -1,12 +1,12 @@
 import vk_api
-from vk_api.lonpoll import VkLongPoll, VkEventType
+from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_confing import group_token
 from random import randrange
 import sqlalchemy as sq
 from sqlachemy.ext.declaretive import declarative_base
-from qslachemy.orm import sessionmaker
-from sqlachemy.exc import IntegrityError, \
-    InvalidRequestError
+from sqlachemy.orm import sessionmaker
+from sqlachemy.exc import IntegrityError, InvalidRequestError
+from sqlalchemyutils import databaseexists, createdatabase
 
 # Подключение к БД
 Base = declarative_base()
@@ -27,7 +27,7 @@ connection = engine.connect()
 class User(Base):
     __tablename__ = 'user'
     id = sq.Colum(sq.Integer, primary_key=True, autoincrement=True)
-    vk_id = sq.Colum(sq.Integer, unique=True)
+    vk_id = sq.Column(sq.Integer, unique=True)
 
 
 # Анкеты добавленные в избранное
@@ -37,32 +37,32 @@ class DatingUser(Base):
     vk_id = sq.Colum(sq.Integer, unique=True)
     first_name = sq.Colum(sq.String)
     second_name = sq.Colum(sq.String)
-    city = sq.Colum(sq.String)
-    link = sq.Colum(sq.String)
-    id_user = sq.Colum(sq.Integer, sq.ForeingKey('dating_user_id', ondelete='CASCADE'))
+    city = sq.Column(sq.String)
+    link = sq.Column(sq.String)
+    id_user = sq.Column(sq.Integer, sq.ForeignKey('dating_user_id', ondelete='CASCADE'))
 
 
 # Фото избранных анкет
 class Photos(Base):
     __tablename__ = 'photos'
     id = sq.Colum(sq.Integer, primary_key=True, autoincrement=True)
-    link_photo = sq.Colum(sq.String)
-    count_likes = sq.Colum(sq.Integer)
-    id_dating_user = sq.Colum(sq.Integer, sq.ForeingKey('dating_user_id', ondelete='CASCADE'))
+    link_photo = sq.Column(sq.String)
+    count_likes = sq.Column(sq.Integer)
+    id_dating_user = sq.Column(sq.Integer, sq.ForeignKey('dating_user_id', ondelete='CASCADE'))
 
 
 # Анкеты в черном списке
 class BlackList(Base):
     __tablename__ = 'black_list'
-    id = sq.Colum(sq.Integer, primary_key=True, autoincrement=True)
-    vk_id = sq.Colum(sq.Integer, unique=True)
-    first_name = sq.Colum(sq.String)
-    second_name = sq.Colum(sq.String)
-    city = sq.Colum(sq.String)
-    link = sq.Colum(sq.String)
-    link_photo = sq.Colum(sq.String)
-    count_likes = sq.Colum(sq.String)
-    id_user = sq.Colum(sq.Integer, sq.ForeingKey('user.id', ondelete='CASCADE'))
+    id = sq.Column(sq.Integer, primary_key=True, autoincrement=True)
+    vk_id = sq.Column(sq.Integer, unique=True)
+    first_name = sq.Column(sq.String)
+    second_name = sq.Column(sq.String)
+    city = sq.Column(sq.String)
+    link = sq.Column(sq.String)
+    link_photo = sq.Column(sq.String)
+    count_likes = sq.Column(sq.String)
+    id_user = sq.Column(sq.Integer, sq.ForeingKey('user.id', ondelete='CASCADE'))
 
 
 # Функции работы с БД
@@ -119,6 +119,27 @@ def register_user(vk_id):
         session.commit()
         return True
     except (IntegrityError, InvalidRequestError):
+        return False
+
+
+# Сохранение выбранного пользователя в БД
+def add_user(event_id, vk_id, first_name, second_name, city, link, link_photo, count_likes, id_user):
+    try:
+        new_user = DatingUser(
+            vk_id=vk_id,
+            first_name=first_name,
+            second_name=second_name,
+            city=city,
+            link=link,
+            link_photo=link_photo,
+            count_likes=count_likes,
+            id_user=id_user)
+        session.add(new_user)
+        session.commit()
+        write_msg(event_id, 'Пользователь успешно добавлен в избранное.')
+        return True
+    except (IntegrityError, InvalidRequestError):
+        write_msg(event_id, 'Пользователь уже в избранном.')
         return False
 
 
